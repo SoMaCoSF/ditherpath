@@ -1,0 +1,22 @@
+[package]
+name = "ditherpath"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT"
+authors = ["SoMaCoSF"]
+description = "Surface-stable encoded dither + GYST UUIDv8 identity + deterministic pathing"
+repository = "https://github.com/SoMaCoSF/ditherpath"
+readme = "README.md"
+keywords = ["dither", "lidar", "gyst", "uuid", "pathfinding"]
+categories = ["algorithms", "science::robotics"]
+
+[[bin]]
+name = "ditherpath"
+path = "src/bin/ditherpath.rs"
+
+[dependencies]
+sha2 = "0.10"
+
+[profile.release]
+lto = false
