@@ -1,0 +1,25 @@
+DitherPath
+==========
+
+Original SoMaCo work. This tree does not vendor source from the two
+systems it is designed to sit between.
+
+Dither3D
+  https://github.com/somacosf/dither3d
+  fork of https://github.com/runevision/Dither3D
+  License: Mozilla Public License 2.0
+  Surface-stable fractal dither is Rune Skovbo Johansen's invention.
+  Occupancy pyramids produced here can drive Dither3D's texture baker.
+  Do not copy Dither3DInclude.cginc into this repo.
+
+clearpath
+  https://github.com/mrorigo/clearpath
+  License: MIT OR Apache-2.0
+  Deterministic 2D obstacle-avoidance + cubic Bezier fitting (rustc 1.85).
+  DitherPath emits a RouteRequest JSON document that crate can consume.
+  The onboard planner here is grid A* + string-pull so the pipeline runs
+  on rustc 1.75. It is not a port of clearpath's geometry kernel.
+
+GYST UUID v8
+  Spec: https://gist.github.com/SoMaCoSF/582fdee49c30196663b759ca9a468a5e
+  Implemented in src/gyst.rs from that specification.
