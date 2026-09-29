@@ -1,66 +1,39 @@
-# Jev in DitherPath
+# Jev as a capability
 
-Jev (TypeSafe System One) is the **judgment layer**. It does not decode bits
-and it does not run A*. Those stay deterministic. Jev answers typed questions
-about state the pipeline already measured.
+Clearpath computes a polyline. That is all it does. Cost, inflate, A*, string-pull.
+Zero judgment. DitherPath keeps that kernel and puts Jev *around* it, not inside it.
 
-Same contract as `SoMaCoSF/jev-minesweeper-harness` and the Austin gate
-(gist `d3944c12d91b96eb41ac0d1a26ba5d2a`):
-
-- One request, many independent questions.
-- Choice is a **closed list**. `NONE` is a real option. The model cannot invent a layer or a landmark.
-- Noul is P(yes). Thresholds live in code.
-- Score is an ordered rubric, not a yes/no.
-- Missing answers stay `null`. Never coerce to `0`.
-- Placing a tile and minting an identity are different risks and do not share a threshold.
-
-## Decode questions
-
-| id | type | branch |
-| --- | --- | --- |
-| `commit_payload` | Noul | accept the recovered bytes as a GYST mark |
-| `layer` | Choice `{L1,L2,L3,L4,NONE}` | which octave is actually resolved |
-| `quality` | Score 0–3 | lattice cleanliness |
-
-Verdicts (city feed, reused):
-
-| verdict | meaning |
-| --- | --- |
-| `Identified` | CRC + placed layer + commit noul ≥ 0.80 → accept UUID |
-| `Anchored` | lattice placed, identity refused → keep-out only |
-| `Unanchored` | keep the observation and the numbers |
-
-A CRC failure cannot become `Identified` no matter what Jev says. Code owns that rail.
-
-## Path questions
-
-| id | type | branch |
-| --- | --- | --- |
-| `accept_route` | Noul | is this polyline safe given keep-out |
-| `maneuver` | Choice `{skirt,hold,replan,abort}` | next closed action |
-| `exposure` | Score 0–3 | how tight the corridor is |
-
-`accepted` in code = `accept_noul ≥ 0.70` **and** maneuver is `skirt`.
-Hold / replan / abort never silently drive.
-
-## Wiring
+Jev is a **capability any stage can register**: a named question set plus a policy
+that maps Noul/Choice/Score onto an `Action`. The loop is the harness World loop:
 
 ```
-scan → occupancy → CRC
-                 ↓
-        Jev decode questions
-                 ↓
-     Identified | Anchored | Unanchored
-                 ↓
-        plan polyline (A*)
-                 ↓
-        Jev path questions
-                 ↓
-     skirt | hold | replan | abort
+observe(state) → jev.decide(questions) → policy(answers) → Action
 ```
 
-Offline: `HeuristicJev` reads flags already in the state string
-(`crc_ok=true`, `visible=4`, `clearance_ok=true`). Live Jev is the same
-`Jev` trait pointed at `POST /v1/systemone` or
-`https://jevtypesafeai.com/api/v1/decide` with `TYPESAFE_API_KEY`.
-The key stays on the server. A 502 is "we could not read," not an empty field.
+`src/capability.rs` is the generic surface. Decode and path are two instances.
+Approach and project are the ones clearpath cannot express.
+
+## Catalog
+
+| capability | when | closed actions |
+| --- | --- | --- |
+| `decode` | after occupancy + CRC | identified / anchored / unanchored |
+| `path` | after A* polyline | skirt / hold / replan / abort |
+| `approach` | before the next scan | approach / hold / orbit / depart |
+| `project` | onto vision | occupancy / identity / keepout / NONE |
+
+Adding a fifth surface is a new `Capability` impl. Do not edit the planner.
+
+## Rails that stay in code
+
+- Geometry (inflate, A*, snap) never calls Jev.
+- CRC failure cannot become `identified`.
+- `accepted` requires both the noul threshold *and* a permitted Choice.
+- Live key stays on the server. 502 ≠ empty field.
+
+## Call
+
+```rust
+let acts = ditherpath::run_all("visible=4 crc_ok=true clearance_ok=true");
+// acts["decode"], acts["path"], acts["approach"], acts["project"]
+```
