@@ -1,32 +1,38 @@
 # DitherPath architecture
 
-Single Rust crate. Three concerns, one binary.
+Single Rust crate. Geometry and judgment are separate.
 
 ```
-GYST UUIDv8 (src/gyst.rs)
+GYST UUIDv8                 src/gyst.rs
         |
         | 16 raw bytes + keep-out + goal
         v
-fractal occupancy pyramid (src/codec.rs)
-        |
-        | surface-stable: payload only on NEW octaves
+fractal occupancy pyramid   src/codec.rs
+        |  payload only on NEW octaves
         v
-lidar intensity snap (src/lidar.rs)
-        |
-        | same field, lens-selected bit order
+lidar intensity snap        src/lidar.rs
+        |  CRC + lens
         v
-AABB + RouteRequest JSON (src/planner.rs)
-        |
-        | onboard A* + string-pull
+Jev capability              src/jev.rs + src/capability.rs
+        |  Identified | Anchored | Unanchored
         v
-clearpath::PathPlanner     (optional, rustc 1.85)
+AABB + A* + string-pull     src/planner.rs     (zero judgment)
+        |
+        v
+Jev capability again        path / approach / project
+        |  skirt|hold|replan|abort ; project channel
+        v
+RouteRequest JSON           examples/route.json
 ```
+
+Clearpath (and our A*) compute a polyline. They judge nothing.
+Jev is a Capability any stage can register. See `docs/JEV.md` and `docs/HANDOFF.md`.
 
 ## Carrier constraint
 
 Dither3D's second rule: zoom in adds dots, never removes them. Encoding copies
 parent sites to the even-even sublattice and writes bits only on the complementary
-sites. A far scan resolves the L0 beacon; a near scan resolves L4 (255 bits).
+sites. A far scan resolves the L0 beacon; a near scan resolves L4.
 
 ## Identity
 
